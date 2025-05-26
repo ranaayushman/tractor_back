@@ -3,17 +3,20 @@
     "target": "ES2020",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "rootDir": "src",
-    "outDir": "dist",
+    "rootDir": ".", 
+    "outDir": "dist", 
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "src/**/*"
-, "index.ts", "src/config", "models", "src/middleware", "src/routes", "src/routes"  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "index.ts",
+    "config",
+    "models",
+    "middleware",
+    "routes",
+    "controllers"
+  ],
+  "exclude": ["node_modules", "dist"]
 }
