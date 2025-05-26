@@ -12,7 +12,7 @@
   },
   "include": [
     "src/**/*"
-  ],
+, "index.ts", "src/config", "models", "src/middleware", "src/routes", "src/routes"  ],
   "exclude": [
     "node_modules"
   ]
