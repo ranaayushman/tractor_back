@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.15.21",
     "cross-env": "^7.0.3",
