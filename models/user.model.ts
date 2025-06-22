@@ -7,10 +7,13 @@ interface UserAttributes {
     username?: string;
     email?: string;
     profilePicture?: string;
+    name?: string;
+    state?: string;
+    district?: string;
 }
 
 // These are the attributes needed for creating a new User
-interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
+interface UserCreationAttributes extends Optional<UserAttributes, 'id'> { }
 
 // This is the type of our User model
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
@@ -19,6 +22,9 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     declare username?: string;
     declare email?: string;
     declare profilePicture?: string;
+    declare name?: string;
+    declare state?: string;
+    declare district?: string;
 }
 
 User.init({
@@ -41,6 +47,18 @@ User.init({
         allowNull: true,
     },
     profilePicture: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    state: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    district: {
         type: DataTypes.STRING,
         allowNull: true,
     },

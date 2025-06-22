@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { Sell } from '../models/sell.model.js';
+import { User } from '../models/user.model.js';
 import { imagekit } from '../config/imagekit.js';
 
 export const createSell = async (req: Request, res: Response) => {
@@ -7,6 +8,12 @@ export const createSell = async (req: Request, res: Response) => {
     const userId = (req as any).user?.userId;
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Check if user exists
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
     let imageUrls: string[] = [];

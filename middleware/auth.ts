@@ -10,18 +10,31 @@ export const authMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
+  console.log('=== AUTH MIDDLEWARE START ===');
+  console.log('Request path:', req.path);
+  console.log('Request method:', req.method);
+
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers.authorization;
+    console.log('Authorization header:', authHeader);
+
+    const token = authHeader?.split(" ")[1];
 
     if (!token) {
-      return res.status(401).json({ message: "No token provided" });
+      console.log('No token provided');
+      return res.status(401).json({ success: false, message: "No token provided" });
     }
 
+    console.log('Token found, verifying...');
     const decoded = jwt.verify(token, JWT_SECRET) as unknown as { userId: number };
+
+    console.log('Token verified, userId:', decoded.userId);
     (req as any).user = decoded;
 
+    console.log('Auth middleware passed, calling next()');
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid token" });
+    console.error('Auth middleware error:', err);
+    return res.status(401).json({ success: false, message: "Invalid token" });
   }
 };

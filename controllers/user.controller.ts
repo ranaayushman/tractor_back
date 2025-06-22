@@ -4,7 +4,7 @@ import { imagekit } from "../config/imagekit.js";
 import jwt from "jsonwebtoken";
 import { Items } from "../models/items.model.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET as string;
 
 // Temporary OTP for development
 const TEMP_OTP = "123456";
@@ -51,70 +51,108 @@ export const getUsers = async (_req: Request, res: Response) => {
 };
 
 export const signup = async (req: Request, res: Response) => {
+  console.log('=== SIGNUP CONTROLLER START ===');
+  console.log('Request body:', req.body);
+
   try {
-    const { phoneNumber, otp } = req.body;
+    const { phoneNumber, otp, name, state, district } = req.body;
 
     if (!phoneNumber || !otp) {
+      console.log('Missing phoneNumber or OTP');
       return res
         .status(400)
-        .json({ message: "Phone number and OTP are required" });
+        .json({ success: false, message: "Phone number and OTP are required" });
     }
 
     if (otp !== TEMP_OTP) {
-      return res.status(400).json({ message: "Invalid OTP" });
+      console.log('Invalid OTP provided:', otp);
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 
     // Check if user already exists
+    console.log('Checking if user exists with phoneNumber:', phoneNumber);
     const existingUser = await User.findOne({ where: { phoneNumber } });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      console.log('User already exists');
+      return res.status(400).json({ success: false, message: "User already exists" });
     }
 
-    // Create new user
-    const user = await User.create({ phoneNumber });
+    // Create new user with additional data
+    console.log('Creating new user with data:', { phoneNumber, name, state, district });
+    const user = await User.create({ 
+      phoneNumber,
+      name,
+      state,
+      district
+    });
 
     // Generate JWT
+    console.log('Generating JWT token');
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
       expiresIn: "24h",
     });
 
-    res.status(201).json({
+    console.log('Signup successful, sending response');
+    return res.status(201).json({
+      success: true,
       message: "User created successfully",
       token,
-      user: { id: user.id, phoneNumber: user.phoneNumber },
+      user: { 
+        id: user.id, 
+        phoneNumber: user.phoneNumber,
+        name: user.name,
+        state: user.state,
+        district: user.district
+      },
     });
   } catch (err) {
     console.error("Signup failed:", err);
-    res.status(500).json({ message: "Error during signup", error: err });
+    return res.status(500).json({ success: false, message: "Error during signup", error: err });
   }
 };
 
 export const login = async (req: Request, res: Response) => {
+  console.log('=== LOGIN CONTROLLER START ===');
+  console.log('Request body:', req.body);
+  console.log('Request headers:', req.headers);
+
   try {
     const { phoneNumber, otp } = req.body;
 
+    // Validate input
     if (!phoneNumber || !otp) {
+      console.log('Missing phoneNumber or OTP');
       return res
         .status(400)
-        .json({ message: "Phone number and OTP are required" });
+        .json({ success: false, message: "Phone number and OTP are required" });
     }
 
+    // Validate OTP
     if (otp !== TEMP_OTP) {
-      return res.status(400).json({ message: "Invalid OTP" });
+      console.log('Invalid OTP provided:', otp, 'Expected:', TEMP_OTP);
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 
     // Find user
+    console.log('Searching for user with phoneNumber:', phoneNumber);
     const user = await User.findOne({ where: { phoneNumber } });
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      console.log('User not found in database');
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    console.log('User found:', { id: user.id, phoneNumber: user.phoneNumber });
+
     // Generate JWT
+    console.log('Generating JWT token');
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
       expiresIn: "24h",
     });
 
-    res.json({
+    console.log('Login successful, preparing response');
+    const responseData = {
+      success: true,
       message: "Login successful",
       token,
       user: {
@@ -124,31 +162,80 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         profilePicture: user.profilePicture,
       },
+    };
+
+    console.log('Sending response:', responseData);
+    return res.status(200).json(responseData);
+
+  } catch (err) {
+    console.error("=== LOGIN CONTROLLER ERROR ===", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error during login",
+      error: err instanceof Error ? err.message : 'Unknown error'
+    });
+  }
+};
+
+export const getProfile = async (req: Request, res: Response) => {
+  console.log('=== GET PROFILE CONTROLLER START ===');
+
+  try {
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      console.log('No userId found in request');
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    console.log('Fetching profile for userId:', userId);
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      console.log('User not found for userId:', userId);
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    console.log('Profile fetched successfully');
+    return res.json({ 
+      success: true, 
+      user: {
+        id: user.id,
+        phoneNumber: user.phoneNumber,
+        name: user.name,
+        state: user.state,
+        district: user.district,
+        profilePicture: user.profilePicture,
+      }
     });
   } catch (err) {
-    console.error("Login failed:", err);
-    res.status(500).json({ message: "Error during login", error: err });
+    console.error("Error fetching profile:", err);
+    return res.status(500).json({ success: false, message: "Error fetching profile", error: err });
   }
 };
 
 export const updateProfile = async (req: Request, res: Response) => {
+  console.log('=== UPDATE PROFILE CONTROLLER START ===');
+
   try {
     const userId = (req as any).user?.userId;
     if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+      console.log('No userId found in request');
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const { username, email } = req.body;
     const user = await User.findByPk(userId);
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      console.log('User not found for userId:', userId);
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     let profilePictureUrl = user.profilePicture;
 
     // Handle file upload if a new image is provided
     if (req.file) {
+      console.log('Processing profile picture upload');
       const extension = req.file.mimetype.split("/")[1];
       const uniqueFilename = `profile_${Date.now()}.${extension}`;
 
@@ -168,44 +255,57 @@ export const updateProfile = async (req: Request, res: Response) => {
       profilePicture: profilePictureUrl,
     });
 
-    res.json({ message: "Profile updated successfully", user });
+    console.log('Profile updated successfully');
+    return res.json({ success: true, message: "Profile updated successfully", user });
   } catch (err) {
     console.error("Profile update failed:", err);
-    res.status(500).json({ message: "Error updating profile", error: err });
+    return res.status(500).json({ success: false, message: "Error updating profile", error: err });
   }
 };
 
 export const createTractor = async (req: Request, res: Response) => {
+  console.log('=== CREATE TRACTOR CONTROLLER START ===');
+
   try {
-    const userId = (req as any).user?.userId; // Will be set by auth middleware
+    const userId = (req as any).user?.userId;
     if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+      console.log('No userId found in request');
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const tractorData = {
       ...req.body,
-      userId, // Associate tractor with user
+      userId,
     };
 
+    console.log('Creating tractor with data:', tractorData);
     const tractor = await Items.create(tractorData);
-    res.status(201).json(tractor);
+
+    console.log('Tractor created successfully');
+    return res.status(201).json({ success: true, tractor });
   } catch (err) {
     console.error("Tractor creation failed:", err);
-    res.status(500).json({ message: "Error creating tractor", error: err });
+    return res.status(500).json({ success: false, message: "Error creating tractor", error: err });
   }
 };
 
 export const getTractors = async (req: Request, res: Response) => {
+  console.log('=== GET TRACTORS CONTROLLER START ===');
+
   try {
-    const userId = (req as any).user?.userId; // Will be set by auth middleware
+    const userId = (req as any).user?.userId;
     if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+      console.log('No userId found in request');
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
+    console.log('Fetching tractors for userId:', userId);
     const tractors = await Items.findAll({ where: { userId } });
-    res.json(tractors);
+
+    console.log('Found tractors:', tractors.length);
+    return res.json({ success: true, tractors });
   } catch (err) {
     console.error("Error fetching tractors:", err);
-    res.status(500).json({ message: "Error fetching tractors", error: err });
+    return res.status(500).json({ success: false, message: "Error fetching tractors", error: err });
   }
 };
