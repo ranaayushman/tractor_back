@@ -309,3 +309,67 @@ export const getTractors = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: "Error fetching tractors", error: err });
   }
 };
+
+export const updateUserById = async (req: Request, res: Response) => {
+  console.log('=== UPDATE USER BY ID CONTROLLER START ===');
+
+  try {
+    const userId = req.params.id;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "User ID is required" });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Accept all updatable fields
+    const { username, email, name, state, district } = req.body;
+    let profilePictureUrl = user.profilePicture;
+
+    // Handle file upload if a new image is provided
+    if (req.file) {
+      const extension = req.file.mimetype.split("/")[1];
+      const uniqueFilename = `profile_${Date.now()}.${extension}`;
+      const uploaded = await imagekit.upload({
+        file: req.file.buffer,
+        fileName: uniqueFilename,
+        folder: "/Home/profilePicture",
+        useUniqueFileName: true,
+      });
+      profilePictureUrl = uploaded.url;
+    }
+
+    await user.update({
+      username: username || user.username,
+      email: email || user.email,
+      name: name || user.name,
+      state: state || user.state,
+      district: district || user.district,
+      profilePicture: profilePictureUrl,
+    });
+
+    return res.json({ success: true, message: "User updated successfully", user });
+  } catch (err) {
+    console.error("Update user by ID failed:", err);
+    return res.status(500).json({ success: false, message: "Error updating user", error: err });
+  }
+};
+
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "User ID is required" });
+    }
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    return res.json({ success: true, user });
+  } catch (err) {
+    console.error("Error fetching user by ID:", err);
+    return res.status(500).json({ success: false, message: "Error fetching user", error: err });
+  }
+};
