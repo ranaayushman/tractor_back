@@ -62,7 +62,32 @@ export const createSell = async (req: Request, res: Response) => {
     };
 
     const sell = await Sell.create(sellData);
-    res.status(201).json(sell);
+
+    // Create corresponding item in Items table
+    const itemData = {
+      productId: sell.get('id') as number,
+      userId: sell.get('userId') as number,
+      tractoreName: sell.get('title') as string,
+      modelNumber: sell.get('modelYear') as string,
+      tractoreImage: Array.isArray(sell.get('images')) && (sell.get('images') as unknown[]).length > 0
+        ? (sell.get('images') as string[])[0]
+        : undefined,
+      tractorType: sell.get('productType') as string,
+      tractorStatus: sell.get('status') as string,
+      price: sell.get('price') as number,
+      location: sell.get('location') as string,
+      brand: sell.get('brand') as string,
+      owner: sell.get('owner') as string,
+      description: sell.get('description') as string,
+      images: sell.get('images') as string[],
+      videoUrl: sell.get('videoUrl') as string,
+      createdAt: sell.get('createdAt') as Date,
+      updatedAt: sell.get('updatedAt') as Date,
+    };
+    const itemModel = await import('../models/items.model.js');
+    const item = await itemModel.Items.create(itemData);
+
+    res.status(201).json({ sell, item });
   } catch (err) {
     console.error('Sell creation failed:', err);
     res.status(500).json({ message: 'Error creating sell item', error: err });
@@ -91,17 +116,17 @@ export const getSellById = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const sell = await Sell.findOne({ 
-      where: { 
+    const sell = await Sell.findOne({
+      where: {
         id: req.params.id,
-        userId 
-      } 
+        userId
+      }
     });
-    
+
     if (!sell) {
       return res.status(404).json({ message: 'Sell item not found' });
     }
-    
+
     res.json(sell);
   } catch (err) {
     console.error('Error fetching sell:', err);
@@ -116,19 +141,19 @@ export const updateSell = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const sell = await Sell.findOne({ 
-      where: { 
+    const sell = await Sell.findOne({
+      where: {
         id: req.params.id,
-        userId 
-      } 
+        userId
+      }
     });
-    
+
     if (!sell) {
       return res.status(404).json({ message: 'Sell item not found' });
     }
 
     let imageUrls = sell.get('images') as string[];
-    
+
     // Handle new image uploads if provided
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       // Validate maximum image count
@@ -180,13 +205,13 @@ export const deleteSell = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const sell = await Sell.findOne({ 
-      where: { 
+    const sell = await Sell.findOne({
+      where: {
         id: req.params.id,
-        userId 
-      } 
+        userId
+      }
     });
-    
+
     if (!sell) {
       return res.status(404).json({ message: 'Sell item not found' });
     }

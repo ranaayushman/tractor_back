@@ -373,3 +373,13 @@ export const getUserById = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: "Error fetching user", error: err });
   }
 };
+
+export const getAllTractors = async (_req: Request, res: Response) => {
+  try {
+    const tractors = await Items.findAll();
+    return res.json({ success: true, tractors });
+  } catch (err) {
+    console.error("Error fetching all tractors:", err);
+    return res.status(500).json({ success: false, message: "Error fetching tractors", error: err });
+  }
+};

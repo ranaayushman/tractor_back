@@ -1,6 +1,7 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db.js';
 import { User } from './user.model.js';
+import { Items } from './items.model.js';
 
 interface SellAttributes {
   id: number;
@@ -92,4 +93,6 @@ export const Sell = sequelize.define<Model<SellAttributes, SellCreationAttribute
     allowNull: false,
     defaultValue: DataTypes.NOW,
   },
-}); 
+});
+
+// Optionally, Items.belongsTo(Sell, { foreignKey: 'productId', targetKey: 'id', as: 'sell' }); 
