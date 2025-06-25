@@ -6,11 +6,8 @@ import userRoutes from './routes/user.routes.js';
 import sellRoutes from './routes/sell.routes.js';
 import itemsRoutes from './routes/items.routes.js';
 import dotenv from 'dotenv';
-
 dotenv.config();
-
 const app = express();
-
 // CORS configuration
 const corsOptions = {
     origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
@@ -19,15 +16,12 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     optionsSuccessStatus: 200
 };
-
 app.use(cors(corsOptions));
 app.use(express.json());
-
 // Routes
 app.use('/api/v1', userRoutes);
 app.use('/api/v1/sell', sellRoutes);
 app.use('/api/v1/items', itemsRoutes);
-
 // 404 handler
 app.use('*', (req, res) => {
     res.status(404).json({
@@ -35,19 +29,17 @@ app.use('*', (req, res) => {
         message: `${req.method} ${req.originalUrl} is not a valid endpoint`
     });
 });
-
-const PORT = process.env.PORT ;
-
+const PORT = process.env.PORT;
 (async () => {
     try {
         await sequelize.authenticate();
         console.log('Database connected successfully');
         await sequelize.sync({ alter: true });
-
         app.listen(PORT, () => {
             console.log(`Server running on http://localhost:${PORT}`);
         });
-    } catch (err) {
+    }
+    catch (err) {
         console.error('Unable to connect to the database:', err);
         process.exit(1);
     }
