@@ -5,6 +5,7 @@ import userRoutes from './routes/user.routes.js';
 import sellRoutes from './routes/sell.routes.js';
 import itemsRoutes from './routes/items.routes.js';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
@@ -26,6 +27,9 @@ app.use(express.json());
 app.use('/api/v1', userRoutes);
 app.use('/api/v1/sell', sellRoutes);
 app.use('/api/v1/items', itemsRoutes);
+
+// Serve uploads directory as static files
+app.use('/uploads', express.static(path.join(process.cwd(), 'tractor_backend', 'uploads')));
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -3,6 +3,7 @@ import { User } from "../models/user.model.js";
 import { imagekit } from "../config/imagekit.js";
 import jwt from "jsonwebtoken";
 import { Items } from "../models/items.model.js";
+import fs from 'fs';
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
@@ -15,16 +16,12 @@ export const createUser = async (req: Request, res: Response) => {
 
     if (req.file) {
       const extension = req.file.mimetype.split("/")[1];
-      const uniqueFilename = `profile_${Date.now()}.${extension}`;
-
-      const uploaded = await imagekit.upload({
-        file: req.file.buffer,
-        fileName: uniqueFilename,
-        folder: "/Home/profilePicture",
-        useUniqueFileName: true,
-      });
-
-      profilePictureUrl = uploaded.url;
+      const username = (req.body.username || '').replace(/\s+/g, '_');
+      const userId = req.body.userId || (user ? user.id : '');
+      const customFilename = `tractorProfilePicture_${username}_${userId}.${extension}`;
+      const destPath = `uploads/profilePicture/${customFilename}`;
+      fs.renameSync(req.file.path, destPath);
+      profilePictureUrl = `${req.protocol}://${req.get('host')}/uploads/profilePicture/${customFilename}`;
     }
 
     const user = await User.create({
@@ -237,16 +234,12 @@ export const updateProfile = async (req: Request, res: Response) => {
     if (req.file) {
       console.log('Processing profile picture upload');
       const extension = req.file.mimetype.split("/")[1];
-      const uniqueFilename = `profile_${Date.now()}.${extension}`;
-
-      const uploaded = await imagekit.upload({
-        file: req.file.buffer,
-        fileName: uniqueFilename,
-        folder: "/Home/profilePicture",
-        useUniqueFileName: true,
-      });
-
-      profilePictureUrl = uploaded.url;
+      const username = (req.body.username || user.username || '').replace(/\s+/g, '_');
+      const userId = user.id;
+      const customFilename = `tractorProfilePicture_${username}_${userId}.${extension}`;
+      const destPath = `uploads/profilePicture/${customFilename}`;
+      fs.renameSync(req.file.path, destPath);
+      profilePictureUrl = `${req.protocol}://${req.get('host')}/uploads/profilePicture/${customFilename}`;
     }
 
     await user.update({
@@ -331,14 +324,12 @@ export const updateUserById = async (req: Request, res: Response) => {
     // Handle file upload if a new image is provided
     if (req.file) {
       const extension = req.file.mimetype.split("/")[1];
-      const uniqueFilename = `profile_${Date.now()}.${extension}`;
-      const uploaded = await imagekit.upload({
-        file: req.file.buffer,
-        fileName: uniqueFilename,
-        folder: "/Home/profilePicture",
-        useUniqueFileName: true,
-      });
-      profilePictureUrl = uploaded.url;
+      const username = (req.body.username || user.username || '').replace(/\s+/g, '_');
+      const userId = user.id;
+      const customFilename = `tractorProfilePicture_${username}_${userId}.${extension}`;
+      const destPath = `uploads/profilePicture/${customFilename}`;
+      fs.renameSync(req.file.path, destPath);
+      profilePictureUrl = `${req.protocol}://${req.get('host')}/uploads/profilePicture/${customFilename}`;
     }
 
     await user.update({

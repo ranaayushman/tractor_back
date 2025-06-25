@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Sell } from '../models/sell.model.js';
 import { User } from '../models/user.model.js';
 import { imagekit } from '../config/imagekit.js';
+import fs from 'fs';
 
 export const createSell = async (req: Request, res: Response) => {
   try {
@@ -28,19 +29,16 @@ export const createSell = async (req: Request, res: Response) => {
         return res.status(400).json({ message: 'Maximum 20 images allowed' });
       }
 
-      // Upload each image to ImageKit
+      // Save each image's local path as a URL
+      let idx = 0;
       for (const file of req.files) {
         const extension = file.mimetype.split('/')[1];
-        const uniqueFilename = `sell_${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
-
-        const uploaded = await imagekit.upload({
-          file: file.buffer,
-          fileName: uniqueFilename,
-          folder: '/Home/sell',
-          useUniqueFileName: true,
-        });
-
-        imageUrls.push(uploaded.url);
+        const userId = (req as any).user?.userId || 'unknown';
+        const customFilename = `tractorItem_${userId}_${idx}.${extension}`;
+        const destPath = `uploads/items/${customFilename}`;
+        fs.renameSync(file.path, destPath);
+        imageUrls.push(`${req.protocol}://${req.get('host')}/uploads/items/${customFilename}`);
+        idx++;
       }
     } else {
       return res.status(400).json({ message: 'At least 1 image is required' });
@@ -162,18 +160,15 @@ export const updateSell = async (req: Request, res: Response) => {
       }
 
       imageUrls = [];
+      let idx2 = 0;
       for (const file of req.files) {
         const extension = file.mimetype.split('/')[1];
-        const uniqueFilename = `sell_${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
-
-        const uploaded = await imagekit.upload({
-          file: file.buffer,
-          fileName: uniqueFilename,
-          folder: '/Home/sell',
-          useUniqueFileName: true,
-        });
-
-        imageUrls.push(uploaded.url);
+        const userId = (req as any).user?.userId || 'unknown';
+        const customFilename = `tractorItem_${userId}_${idx2}.${extension}`;
+        const destPath = `uploads/items/${customFilename}`;
+        fs.renameSync(file.path, destPath);
+        imageUrls.push(`${req.protocol}://${req.get('host')}/uploads/items/${customFilename}`);
+        idx2++;
       }
     }
 
