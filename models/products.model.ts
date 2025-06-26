@@ -1,15 +1,14 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db.js';
 import { User } from './user.model.js';
-import { Items } from './items.model.js';
 
-interface SellAttributes {
+interface ProductAttributes {
   id: number;
   userId: number;
   productType: string;
-  title: string;
+  title: string; // from sell (was tractoreName in items)
   brand: string;
-  modelYear: string;
+  modelYear: string; // from sell (was modelNumber in items)
   owner: string;
   description: string;
   location: string;
@@ -21,9 +20,9 @@ interface SellAttributes {
   updatedAt?: Date;
 }
 
-interface SellCreationAttributes extends Optional<SellAttributes, 'id' | 'createdAt' | 'updatedAt'> { }
+interface ProductCreationAttributes extends Optional<ProductAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
-export const Sell = sequelize.define<Model<SellAttributes, SellCreationAttributes>>('Sell', {
+export const Product = sequelize.define<Model<ProductAttributes, ProductCreationAttributes>>('Product', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -93,6 +92,4 @@ export const Sell = sequelize.define<Model<SellAttributes, SellCreationAttribute
     allowNull: false,
     defaultValue: DataTypes.NOW,
   },
-});
-
-// Optionally, Items.belongsTo(Sell, { foreignKey: 'productId', targetKey: 'id', as: 'sell' }); 
+}); 

@@ -10,7 +10,7 @@ const ensureDir = (dir: string) => {
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        let dest = 'uploads/items';
+        let dest = 'uploads/products';
         if (file.fieldname === 'profilePicture' || file.fieldname === 'image') {
             dest = 'uploads/profilePicture';
         }

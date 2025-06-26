@@ -29,4 +29,14 @@ coverage/
 
 # Temporary files
 tmp/
-temp/ 
+temp/
+
+# Do NOT ignore images in uploads/products and uploads/profilePicture
+!uploads/products/
+!uploads/profilePicture/
+
+# Ignore all images/files inside uploads/products and uploads/profilePicture, but not the folders themselves
+uploads/products/*
+uploads/profilePicture/*
+!uploads/products/.gitkeep
+!uploads/profilePicture/.gitkeep 

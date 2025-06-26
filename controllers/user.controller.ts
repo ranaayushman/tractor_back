@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import { User } from "../models/user.model.js";
 import { imagekit } from "../config/imagekit.js";
 import jwt from "jsonwebtoken";
-import { Items } from "../models/items.model.js";
 import fs from 'fs';
+import { Product } from "../models/products.model.js";
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
@@ -13,12 +13,11 @@ const TEMP_OTP = "123456";
 export const createUser = async (req: Request, res: Response) => {
   try {
     let profilePictureUrl: string | undefined;
-
+    let userIdForFilename = req.body.userId || 'newuser';
     if (req.file) {
       const extension = req.file.mimetype.split("/")[1];
       const username = (req.body.username || '').replace(/\s+/g, '_');
-      const userId = req.body.userId || (user ? user.id : '');
-      const customFilename = `tractorProfilePicture_${username}_${userId}.${extension}`;
+      const customFilename = `tractorProfilePicture_${username}_${userIdForFilename}.${extension}`;
       const destPath = `uploads/profilePicture/${customFilename}`;
       fs.renameSync(req.file.path, destPath);
       profilePictureUrl = `${req.protocol}://${req.get('host')}/uploads/profilePicture/${customFilename}`;
@@ -272,7 +271,7 @@ export const createTractor = async (req: Request, res: Response) => {
     };
 
     console.log('Creating tractor with data:', tractorData);
-    const tractor = await Items.create(tractorData);
+    const tractor = await Product.create(tractorData);
 
     console.log('Tractor created successfully');
     return res.status(201).json({ success: true, tractor });
@@ -293,12 +292,22 @@ export const getTractors = async (req: Request, res: Response) => {
     }
 
     console.log('Fetching tractors for userId:', userId);
-    const tractors = await Items.findAll({ where: { userId } });
+    const tractors = await Product.findAll({ where: { userId } });
 
     console.log('Found tractors:', tractors.length);
     return res.json({ success: true, tractors });
   } catch (err) {
     console.error("Error fetching tractors:", err);
+    return res.status(500).json({ success: false, message: "Error fetching tractors", error: err });
+  }
+};
+
+export const getAllTractors = async (_req: Request, res: Response) => {
+  try {
+    const tractors = await Product.findAll();
+    return res.json({ success: true, tractors });
+  } catch (err) {
+    console.error("Error fetching all tractors:", err);
     return res.status(500).json({ success: false, message: "Error fetching tractors", error: err });
   }
 };
@@ -362,15 +371,5 @@ export const getUserById = async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Error fetching user by ID:", err);
     return res.status(500).json({ success: false, message: "Error fetching user", error: err });
-  }
-};
-
-export const getAllTractors = async (_req: Request, res: Response) => {
-  try {
-    const tractors = await Items.findAll();
-    return res.json({ success: true, tractors });
-  } catch (err) {
-    console.error("Error fetching all tractors:", err);
-    return res.status(500).json({ success: false, message: "Error fetching tractors", error: err });
   }
 };
