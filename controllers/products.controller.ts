@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
-import { Product } from '../models/products.model.js';
-import { User } from '../models/user.model.js';
+import { Product, User } from '../models/index.js';
 import fs from 'fs';
 
 // CREATE product (auth required)
@@ -56,10 +55,16 @@ export const createProduct = async (req: Request, res: Response) => {
   }
 };
 
-// GET all products (public)
+// GET all products (public) - with seller info
 export const getAllProducts = async (_req: Request, res: Response) => {
   try {
-    const products = await Product.findAll();
+    const products = await Product.findAll({
+      include: [{
+        model: User,
+        as: 'seller', // Make sure this alias matches your association
+        attributes: ['id', 'name', 'phoneNumber', 'email', 'profilePicture', 'state', 'district']
+      }]
+    });
     res.json(products);
   } catch (err) {
     console.error('Error fetching products:', err);
@@ -67,13 +72,21 @@ export const getAllProducts = async (_req: Request, res: Response) => {
   }
 };
 
-// GET product by id (public)
+// GET product by id (public) - with seller info
 export const getProductById = async (req: Request, res: Response) => {
   try {
-    const product = await Product.findByPk(req.params.id);
+    const product = await Product.findByPk(req.params.id, {
+      include: [{
+        model: User,
+        as: 'seller', // Make sure this alias matches your association
+        attributes: ['id', 'name', 'phoneNumber', 'email', 'profilePicture', 'state', 'district']
+      }]
+    });
+    
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
+    
     res.json(product);
   } catch (err) {
     console.error('Error fetching product:', err);
@@ -147,17 +160,24 @@ export const deleteProduct = async (req: Request, res: Response) => {
   }
 };
 
-// GET products by userId (public)
+// GET products by userId (public) - with seller info
 export const getProductsByUserId = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     if (!userId) {
       return res.status(400).json({ message: 'userId is required' });
     }
-    const products = await Product.findAll({ where: { userId } });
+    const products = await Product.findAll({ 
+      where: { userId },
+      include: [{
+        model: User,
+        as: 'seller', // Make sure this alias matches your association
+        attributes: ['id', 'name', 'phoneNumber', 'email', 'profilePicture', 'state', 'district']
+      }]
+    });
     res.json(products);
   } catch (err) {
     console.error('Error fetching products by userId:', err);
     res.status(500).json({ message: 'Error fetching products by userId', error: err });
   }
-}; 
+};
