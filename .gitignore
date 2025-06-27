@@ -29,7 +29,7 @@ coverage/
 
 # Temporary files
 tmp/
-temp/
+temp/ 
 
 # Do NOT ignore images in uploads/products and uploads/profilePicture
 !uploads/products/

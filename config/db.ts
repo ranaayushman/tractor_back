@@ -26,6 +26,6 @@ export const sequelize = new Sequelize(
     host: DB_HOST as string,
     port: isNaN(port) ? 3306 : port,
     dialect: 'mysql',
-    logging: true,
+    logging: false,
   }
 );

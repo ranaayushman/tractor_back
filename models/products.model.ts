@@ -6,9 +6,9 @@ interface ProductAttributes {
   id: number;
   userId: number;
   productType: string;
-  title: string; // from sell (was tractoreName in items)
+  title: string;
   brand: string;
-  modelYear: string; // from sell (was modelNumber in items)
+  modelYear: string; 
   owner: string;
   description: string;
   location: string;
