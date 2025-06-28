@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Product, User } from "../models/index.js";
+import { Product, User, ProductImage } from "../models/index.js";
 import fs from "fs";
 
 // CREATE product (auth required)
@@ -49,26 +49,31 @@ export const createProduct = async (req: Request, res: Response) => {
       description: req.body.description,
       location: req.body.location,
       videoUrl: req.body.videoUrl,
-      images: imageUrls,
       price: req.body.price,
       status: req.body.status || "active",
     };
     const product = await Product.create(productData);
-    res.status(201).json(product);
+    const productId = product.getDataValue('id');
+    // Save images in ProductImage table
+    const imageRecords = await Promise.all(imageUrls.map((url: string) => ProductImage.create({ productId, url })));
+    // Attach images to response for compatibility
+    const prodWithImages: any = product.toJSON();
+    prodWithImages.images = imageRecords.map((img: any) => img.getDataValue('url'));
+    res.status(201).json(prodWithImages);
   } catch (err) {
     console.error("Product creation failed:", err);
     res.status(500).json({ message: "Error creating product", error: err });
   }
 };
 
-// GET all products (public) - with seller info
+// GET all products (public) - with seller info and images
 export const getAllProducts = async (_req: Request, res: Response) => {
   try {
     const products = await Product.findAll({
       include: [
         {
           model: User,
-          as: "seller", // Make sure this alias matches your association
+          as: "seller",
           attributes: [
             "id",
             "name",
@@ -79,23 +84,34 @@ export const getAllProducts = async (_req: Request, res: Response) => {
             "district",
           ],
         },
+        {
+          model: ProductImage,
+          as: "images",
+          attributes: ["url"],
+        },
       ],
     });
-    res.json(products);
+    // Flatten images for compatibility
+    const result = products.map(p => {
+      const obj = p.toJSON();
+      (obj as any).images = ((obj as any).images || []).map((img: any) => img.url);
+      return obj;
+    });
+    res.json(result);
   } catch (err) {
     console.error("Error fetching products:", err);
     res.status(500).json({ message: "Error fetching products", error: err });
   }
 };
 
-// GET product by id (public) - with seller info
+// GET product by id (public) - with seller info and images
 export const getProductById = async (req: Request, res: Response) => {
   try {
     const product = await Product.findByPk(req.params.id, {
       include: [
         {
           model: User,
-          as: "seller", // Make sure this alias matches your association
+          as: "seller",
           attributes: [
             "id",
             "name",
@@ -106,14 +122,19 @@ export const getProductById = async (req: Request, res: Response) => {
             "district",
           ],
         },
+        {
+          model: ProductImage,
+          as: "images",
+          attributes: ["url"],
+        },
       ],
     });
-
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-
-    res.json(product);
+    const obj = product.toJSON();
+    (obj as any).images = ((obj as any).images || []).map((img: any) => img.url);
+    res.json(obj);
   } catch (err) {
     console.error("Error fetching product:", err);
     res.status(500).json({ message: "Error fetching product", error: err });
@@ -164,20 +185,14 @@ export const updateProduct = async (req: Request, res: Response) => {
         idx2++;
       }
     }
-    await product.update({
-      productType: req.body.productType || product.get("productType"),
-      title: req.body.title || product.get("title"),
-      brand: req.body.brand || product.get("brand"),
-      modelYear: req.body.modelYear || product.get("modelYear"),
-      owner: req.body.owner || product.get("owner"),
-      description: req.body.description || product.get("description"),
-      location: req.body.location || product.get("location"),
-      videoUrl: req.body.videoUrl || product.get("videoUrl"),
-      images: imageUrls,
-      price: req.body.price || product.get("price"),
-      status: req.body.status || product.get("status"),
-    });
-    res.json(product);
+    // Remove all old images from ProductImage and add new ones
+    // Use product.getDataValue('id') to get the id
+    const productId = product.getDataValue('id');
+    const imageRecords = await Promise.all(imageUrls.map((url: string) => ProductImage.create({ productId, url })));
+    // Attach images to response for compatibility
+    const prodWithImages: any = product.toJSON();
+    prodWithImages.images = imageRecords.map((img: any) => img.getDataValue('url'));
+    res.status(201).json(prodWithImages);
   } catch (err) {
     console.error("Error updating product:", err);
     res.status(500).json({ message: "Error updating product", error: err });
@@ -205,7 +220,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
   }
 };
 
-// GET products by userId (public) - with seller info
+// GET products by userId (public) - with seller info and images
 export const getProductsByUserId = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -217,7 +232,7 @@ export const getProductsByUserId = async (req: Request, res: Response) => {
       include: [
         {
           model: User,
-          as: "seller", // Make sure this alias matches your association
+          as: "seller",
           attributes: [
             "id",
             "name",
@@ -228,9 +243,19 @@ export const getProductsByUserId = async (req: Request, res: Response) => {
             "district",
           ],
         },
+        {
+          model: ProductImage,
+          as: "images",
+          attributes: ["url"],
+        },
       ],
     });
-    res.json(products);
+    const result = products.map(p => {
+      const obj = p.toJSON();
+      (obj as any).images = ((obj as any).images || []).map((img: any) => img.url);
+      return obj;
+    });
+    res.json(result);
   } catch (err) {
     console.error("Error fetching products by userId:", err);
     res

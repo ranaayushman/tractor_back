@@ -13,7 +13,6 @@ interface ProductAttributes {
   description: string;
   location: string;
   videoUrl?: string;
-  images?: string[];
   price: number;
   status: string;
   createdAt?: Date;
@@ -68,11 +67,6 @@ export const Product = sequelize.define<Model<ProductAttributes, ProductCreation
     type: DataTypes.STRING,
     allowNull: true,
   },
-  images: {
-    type: DataTypes.JSON,
-    allowNull: true,
-    defaultValue: [],
-  },
   price: {
     type: DataTypes.FLOAT,
     allowNull: false,
@@ -92,4 +86,4 @@ export const Product = sequelize.define<Model<ProductAttributes, ProductCreation
     allowNull: false,
     defaultValue: DataTypes.NOW,
   },
-}); 
+});
