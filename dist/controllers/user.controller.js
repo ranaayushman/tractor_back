@@ -1,23 +1,21 @@
 import { User } from "../models/user.model.js";
-import { imagekit } from "../config/imagekit.js";
 import jwt from "jsonwebtoken";
-import { Items } from "../models/items.model.js";
+import fs from 'fs';
+import { Product } from "../models/products.model.js";
 const JWT_SECRET = process.env.JWT_SECRET;
 // Temporary OTP for development
 const TEMP_OTP = "123456";
 export const createUser = async (req, res) => {
     try {
         let profilePictureUrl;
+        let userIdForFilename = req.body.userId || 'newuser';
         if (req.file) {
             const extension = req.file.mimetype.split("/")[1];
-            const uniqueFilename = `profile_${Date.now()}.${extension}`;
-            const uploaded = await imagekit.upload({
-                file: req.file.buffer,
-                fileName: uniqueFilename,
-                folder: "/Home/profilePicture",
-                useUniqueFileName: true,
-            });
-            profilePictureUrl = uploaded.url;
+            const username = (req.body.username || '').replace(/\s+/g, '_');
+            const customFilename = `tractorProfilePicture_${username}_${userIdForFilename}.${extension}`;
+            const destPath = `uploads/profilePicture/${customFilename}`;
+            fs.renameSync(req.file.path, destPath);
+            profilePictureUrl = `${req.protocol}://${req.get('host')}/uploads/profilePicture/${customFilename}`;
         }
         const user = await User.create({
             phoneNumber: req.body.phoneNumber,
@@ -202,14 +200,12 @@ export const updateProfile = async (req, res) => {
         if (req.file) {
             console.log('Processing profile picture upload');
             const extension = req.file.mimetype.split("/")[1];
-            const uniqueFilename = `profile_${Date.now()}.${extension}`;
-            const uploaded = await imagekit.upload({
-                file: req.file.buffer,
-                fileName: uniqueFilename,
-                folder: "/Home/profilePicture",
-                useUniqueFileName: true,
-            });
-            profilePictureUrl = uploaded.url;
+            const username = (req.body.username || user.username || '').replace(/\s+/g, '_');
+            const userId = user.id;
+            const customFilename = `tractorProfilePicture_${username}_${userId}.${extension}`;
+            const destPath = `uploads/profilePicture/${customFilename}`;
+            fs.renameSync(req.file.path, destPath);
+            profilePictureUrl = `${req.protocol}://${req.get('host')}/uploads/profilePicture/${customFilename}`;
         }
         await user.update({
             username: username || user.username,
@@ -237,7 +233,7 @@ export const createTractor = async (req, res) => {
             userId,
         };
         console.log('Creating tractor with data:', tractorData);
-        const tractor = await Items.create(tractorData);
+        const tractor = await Product.create(tractorData);
         console.log('Tractor created successfully');
         return res.status(201).json({ success: true, tractor });
     }
@@ -255,12 +251,22 @@ export const getTractors = async (req, res) => {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
         console.log('Fetching tractors for userId:', userId);
-        const tractors = await Items.findAll({ where: { userId } });
+        const tractors = await Product.findAll({ where: { userId } });
         console.log('Found tractors:', tractors.length);
         return res.json({ success: true, tractors });
     }
     catch (err) {
         console.error("Error fetching tractors:", err);
+        return res.status(500).json({ success: false, message: "Error fetching tractors", error: err });
+    }
+};
+export const getAllTractors = async (_req, res) => {
+    try {
+        const tractors = await Product.findAll();
+        return res.json({ success: true, tractors });
+    }
+    catch (err) {
+        console.error("Error fetching all tractors:", err);
         return res.status(500).json({ success: false, message: "Error fetching tractors", error: err });
     }
 };
@@ -281,14 +287,12 @@ export const updateUserById = async (req, res) => {
         // Handle file upload if a new image is provided
         if (req.file) {
             const extension = req.file.mimetype.split("/")[1];
-            const uniqueFilename = `profile_${Date.now()}.${extension}`;
-            const uploaded = await imagekit.upload({
-                file: req.file.buffer,
-                fileName: uniqueFilename,
-                folder: "/Home/profilePicture",
-                useUniqueFileName: true,
-            });
-            profilePictureUrl = uploaded.url;
+            const username = (req.body.username || user.username || '').replace(/\s+/g, '_');
+            const userId = user.id;
+            const customFilename = `tractorProfilePicture_${username}_${userId}.${extension}`;
+            const destPath = `uploads/profilePicture/${customFilename}`;
+            fs.renameSync(req.file.path, destPath);
+            profilePictureUrl = `${req.protocol}://${req.get('host')}/uploads/profilePicture/${customFilename}`;
         }
         await user.update({
             username: username || user.username,
@@ -320,15 +324,5 @@ export const getUserById = async (req, res) => {
     catch (err) {
         console.error("Error fetching user by ID:", err);
         return res.status(500).json({ success: false, message: "Error fetching user", error: err });
-    }
-};
-export const getAllTractors = async (_req, res) => {
-    try {
-        const tractors = await Items.findAll();
-        return res.json({ success: true, tractors });
-    }
-    catch (err) {
-        console.error("Error fetching all tractors:", err);
-        return res.status(500).json({ success: false, message: "Error fetching tractors", error: err });
     }
 };
