@@ -198,9 +198,10 @@ export const getProfile = async (req: Request, res: Response) => {
         id: user.id,
         phoneNumber: user.phoneNumber,
         name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture,
         state: user.state,
         district: user.district,
-        profilePicture: user.profilePicture,
       }
     });
   } catch (err) {
@@ -367,7 +368,19 @@ export const getUserById = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
-    return res.json({ success: true, user });
+    // Return all relevant fields for frontend autofill
+    return res.json({
+      success: true,
+      user: {
+        id: user.id,
+        phoneNumber: user.phoneNumber,
+        name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture,
+        state: user.state,
+        district: user.district,
+      }
+    });
   } catch (err) {
     console.error("Error fetching user by ID:", err);
     return res.status(500).json({ success: false, message: "Error fetching user", error: err });
