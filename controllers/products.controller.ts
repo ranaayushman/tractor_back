@@ -133,7 +133,17 @@ export const getProductById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Product not found" });
     }
     const obj = product.toJSON();
-    (obj as any).images = ((obj as any).images || []).map((img: any) => img.url);
+    let imgs = (obj as any).images;
+    if (typeof imgs === "string") {
+      try {
+        imgs = JSON.parse(imgs);
+      } catch {
+        imgs = [];
+      }
+    }
+    (obj as any).images = Array.isArray(imgs)
+      ? imgs.map((img: any) => img.url || img)
+      : [];
     res.json(obj);
   } catch (err) {
     console.error("Error fetching product:", err);
